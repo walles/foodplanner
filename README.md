@@ -1,2 +1,2 @@
 Example:
-    ./foodplanner.rb examples/food.yaml examples/calendar.yaml
+    ./foodplanner.rb examples/menu.yaml examples/calendar.yaml
