@@ -2,13 +2,13 @@
 # first participant of any day is assumed to do the cooking, so order
 # matters.
 
-monday:
+- monday:
   - fia
 
-tuesday lunch:
+- tuesday lunch:
   - johan
   - fia
 
-tuesday:
+- tuesday:
   - fia
   - johan
