@@ -1,0 +1,14 @@
+# List of occations, with participants listed for each occation. The
+# first participant of any day is assumed to do the cooking, so order
+# matters.
+
+monday:
+  - fia
+
+tuesday lunch:
+  - johan
+  - fia
+
+tuesday:
+  - fia
+  - johan

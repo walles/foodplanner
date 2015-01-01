@@ -1,0 +1,12 @@
+# List of different kinds of food, and who (if anybody) doesn't like
+# to cook or eat each kind of food.
+
+pancakes:
+
+olives:
+  not eating:
+    johan
+
+risotto:
+  not cooking:
+    johan
