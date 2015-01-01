@@ -1,5 +1,7 @@
 #!/usr/bin/env ruby
 
+require 'yaml'
+
 # Parse arguments
 if ARGV.length != 2
   $stderr.puts 'ERROR: Expected two arguments'
@@ -21,8 +23,10 @@ unless File.file?(calendar_yaml)
 end
 
 # FIXME: Parse the food YAML file
+food_thing = YAML.load_file(food_yaml)
 
 # FIXME: Parse the calendar YAML file
+calendar_thing = YAML.load_file(calendar_yaml)
 
 # FIXME: Make a menu
 
