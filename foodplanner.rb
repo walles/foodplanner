@@ -23,9 +23,29 @@ calendar_thing = YAML.load_file(calendar_yaml)
 # FIXME: Make a menu
 calendar_thing.each do |occation|
   occation_name = occation.keys[0]
-  occation_participants = occation[occation_name]
+  participants = occation[occation_name]
+  cook = participants[0]
 
-  # FIXME: ... make a list of all possible foods given the participants
+  # ... make a list of all possible foods given the participants
+  available_food = []
+
+  food_thing.each_pair do |course, restrictions|
+    if restrictions.nil?
+      available_food << course
+      next
+    end
+
+    not_eating = restrictions['not eating'] || []
+    not_cooking = restrictions['not cooking'] || []
+
+    next if not_cooking.include?(cook)
+    next if (participants & not_eating).size > 0
+
+    available_food << course
+  end
+
+  puts available_food.join(', ')
+
   # FIXME: ... and pick a course from that list
   # FIXME: ... then don't forget to remove the course from the complete list
 end

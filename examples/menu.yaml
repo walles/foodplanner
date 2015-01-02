@@ -5,8 +5,8 @@ pancakes:
 
 olives:
   not eating:
-    johan
+    - johan
 
 risotto:
   not cooking:
-    johan
+    - johan
