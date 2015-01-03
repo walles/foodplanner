@@ -21,6 +21,7 @@ food_thing = YAML.load_file(food_yaml)
 calendar_thing = YAML.load_file(calendar_yaml)
 
 # FIXME: Make a menu
+plan = []
 calendar_thing.each do |occation|
   occation_name = occation.keys[0]
   participants = occation[occation_name]
@@ -44,10 +45,10 @@ calendar_thing.each do |occation|
     available_food << course
   end
 
-  puts available_food.join(', ')
-
-  # FIXME: ... and pick a course from that list
+  # ... and pick a course from that list
+  plan << { occation_name => available_food.sample }
   # FIXME: ... then don't forget to remove the course from the complete list
 end
 
-# FIXME: Print menu to stdout
+# Print menu to stdout
+puts YAML.dump(plan)
