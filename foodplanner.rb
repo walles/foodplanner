@@ -12,15 +12,13 @@ end
 food_yaml = ARGV[0]
 calendar_yaml = ARGV[1]
 
-# FIXME: Parse the food YAML file
-# FIXME: Verify it against a schema
+# FIXME: Verify YAML against a schema
 food_thing = YAML.load_file(food_yaml)
 
-# FIXME: Parse the calendar YAML file
-# FIXME: Verify it against a schema
+# FIXME: Verify YAML against a schema
 calendar_thing = YAML.load_file(calendar_yaml)
 
-# FIXME: Make a menu
+# Make a menu
 plan = []
 calendar_thing.each do |occation|
   occation_name = occation.keys[0]
@@ -36,6 +34,7 @@ calendar_thing.each do |occation|
       next
     end
 
+    # FIXME: If we get unknown restrictions, report error to user
     not_eating = restrictions['not eating'] || []
     not_cooking = restrictions['not cooking'] || []
 
@@ -46,8 +45,11 @@ calendar_thing.each do |occation|
   end
 
   # ... and pick a course from that list
-  plan << { occation_name => available_food.sample }
-  # FIXME: ... then don't forget to remove the course from the complete list
+  food = available_food.sample
+  plan << { occation_name => food }
+
+  # ... then don't forget to remove the course from the complete list
+  food_thing.delete(food)
 end
 
 # Print menu to stdout
