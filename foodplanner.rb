@@ -2,6 +2,11 @@
 
 require 'yaml'
 
+# FIXME: Optionally accept a third argument which is the output from a
+# previous run, possibly on stdin. Given that, we should use food
+# listed in that file only if no other food is available. This would
+# help decrease repetetiveness between invocations.
+
 # Parse arguments
 if ARGV.length != 2
   $stderr.puts 'ERROR: Expected two arguments'
