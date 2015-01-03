@@ -44,6 +44,13 @@ calendar_thing.each do |occation|
     available_food << course
   end
 
+  if available_food.empty?
+    $stderr.puts "ERROR: Can't plan for #{occation_name}, menu exhausted"
+    $stderr.puts
+    $stderr.puts 'Please add more courses to the menu or remove some restrictions'
+    exit 1
+  end
+
   # ... and pick a course from that list
   food = available_food.sample
   plan << { occation_name => food }
