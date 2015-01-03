@@ -14,6 +14,9 @@ if ARGV.length != 2
   $stderr.puts 'Syntax: foodplanner.rb <food YAML> <calendar YAML>'
   exit 1
 end
+
+# FIXME: Accept arguments in any order and use schemas to identify
+# them
 food_yaml = ARGV[0]
 calendar_yaml = ARGV[1]
 
