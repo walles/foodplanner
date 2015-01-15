@@ -13,3 +13,6 @@ putting constraints on different tags.
 * Add support for expressing things like "we want vegetarian at least
 once per generated menu". Needs tagging of food courses, and some way
 of putting constraints on different tags.
+
+* Add support for expressing things like "this course is best cooked
+on Fridays".
