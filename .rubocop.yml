@@ -6,3 +6,6 @@ LineLength:
 
 MethodCallParentheses:
   Enabled: false
+
+MethodLength:
+  Enabled: false
