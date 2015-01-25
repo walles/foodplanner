@@ -1,0 +1,5 @@
+RedundantReturn:
+  Enabled: false
+
+LineLength:
+  Max: 99
