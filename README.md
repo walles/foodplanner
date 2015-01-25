@@ -3,6 +3,11 @@ Example:
 
 # TODO
 
+* Add support for "on Fridays, we only want food with a certain tag".
+
+* Start by selecting food for the occations with the fewest possible
+choices and continue up from there.
+
 * Accept a previously generated menu as input and avoid those courses
 for this menu.
 
