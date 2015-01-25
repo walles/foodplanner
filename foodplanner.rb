@@ -2,8 +2,7 @@
 
 require 'yaml'
 
-# Make a menu
-def plan_food_for_occation(food_thing, occation)
+def available_food_for_occation(food_thing, occation)
   occation_name = occation.keys[0]
   participants = occation[occation_name]
   cook = participants[0]
@@ -27,7 +26,14 @@ def plan_food_for_occation(food_thing, occation)
     available_food << course
   end
 
+  return available_food
+end
+
+def plan_food_for_occation(food_thing, occation)
+  available_food = available_food_for_occation(food_thing, occation)
+
   if available_food.empty?
+    occation_name = occation.keys[0]
     $stderr.puts "ERROR: Can't plan for #{occation_name}, menu exhausted"
     $stderr.puts
     $stderr.puts 'Please add more courses to the menu or remove some restrictions'
