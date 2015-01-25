@@ -5,9 +5,6 @@ Example:
 
 * Add support for "on Fridays, we only want food with a certain tag".
 
-* Start by selecting food for the occations with the fewest possible
-choices and continue up from there.
-
 * Accept a previously generated menu as input and avoid those courses
 for this menu.
 
@@ -21,3 +18,8 @@ of putting constraints on different tags.
 
 * Add support for expressing things like "this course is best cooked
 on Fridays".
+
+# DONE
+
+* Start by selecting food for the occations with the fewest possible
+choices and continue up from there.

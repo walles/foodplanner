@@ -44,17 +44,49 @@ def plan_food_for_occation(food_thing, occation)
   return available_food.sample
 end
 
-def plan_food(food_thing, calendar_thing)
-  plan = []
-  calendar_thing.each do |occation|
-    course = plan_food_for_occation(food_thing, occation)
-
-    occation_name = occation.keys[0]
-    plan << { occation_name => course }
-    food_thing.delete(course)
+# Find the occation with the fewest available food options
+def find_occation_to_plan_for(food_thing, occations)
+  # Map occation names to number of available courses
+  occations_to_course_counts = {}
+  occations.each do |occation|
+    course_count = available_food_for_occation(food_thing, occation).size
+    occations_to_course_counts[occation] = course_count
   end
 
-  return plan
+  # Extract the occation names with the lowest number of courses
+  lowest = occations_to_course_counts.values.min
+  candidates = []
+  occations_to_course_counts.each do |occation, count|
+    candidates << occation if count == lowest
+  end
+
+  # Pick one occation with the lowest count
+  return candidates.sample
+end
+
+def plan_food(food_thing, calendar_thing)
+  plan = {}
+  remaining_occations = calendar_thing.clone
+
+  until remaining_occations.empty?
+    # Find the occation that with the lowest number of available courses
+    occation = find_occation_to_plan_for(food_thing, remaining_occations)
+    occation_name = occation.keys[0]
+
+    course = plan_food_for_occation(food_thing, occation)
+    plan[occation_name] = course
+    food_thing.delete(course)
+    remaining_occations.delete(occation)
+  end
+
+  # Sort the plan to match the order of the calendar_thing
+  ordered_plan = []
+  calendar_thing.each do |occation|
+    occation_name = occation.keys[0]
+    ordered_plan << { occation_name => plan[occation_name] }
+  end
+
+  return ordered_plan
 end
 
 # FIXME: Optionally accept a third argument which is the output from a
