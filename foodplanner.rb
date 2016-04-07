@@ -2,9 +2,9 @@
 
 require 'yaml'
 
-def available_food_for_occation(food_thing, occation)
-  occation_name = occation.keys[0]
-  participants = occation[occation_name]
+def available_food_for_occasion(food_thing, occasion)
+  occasion_name = occasion.keys[0]
+  participants = occasion[occasion_name]
   cook = participants[0]
 
   # ... make a list of all possible foods given the participants
@@ -29,12 +29,12 @@ def available_food_for_occation(food_thing, occation)
   return available_food
 end
 
-def plan_food_for_occation(food_thing, occation)
-  available_food = available_food_for_occation(food_thing, occation)
+def plan_food_for_occasion(food_thing, occasion)
+  available_food = available_food_for_occasion(food_thing, occasion)
 
   if available_food.empty?
-    occation_name = occation.keys[0]
-    $stderr.puts "ERROR: Can't plan for #{occation_name}, menu exhausted"
+    occasion_name = occasion.keys[0]
+    $stderr.puts "ERROR: Can't plan for #{occasion_name}, menu exhausted"
     $stderr.puts
     $stderr.puts 'Please add more courses to the menu or remove some restrictions'
     exit 1
@@ -44,46 +44,46 @@ def plan_food_for_occation(food_thing, occation)
   return available_food.sample
 end
 
-# Find the occation with the fewest available food options
-def find_occation_to_plan_for(food_thing, occations)
-  # Map occation names to number of available courses
-  occations_to_course_counts = {}
-  occations.each do |occation|
-    course_count = available_food_for_occation(food_thing, occation).size
-    occations_to_course_counts[occation] = course_count
+# Find the occasion with the fewest available food options
+def find_occasion_to_plan_for(food_thing, occasions)
+  # Map occasion names to number of available courses
+  occasions_to_course_counts = {}
+  occasions.each do |occasion|
+    course_count = available_food_for_occasion(food_thing, occasion).size
+    occasions_to_course_counts[occasion] = course_count
   end
 
-  # Extract the occation names with the lowest number of courses
-  lowest = occations_to_course_counts.values.min
+  # Extract the occasion names with the lowest number of courses
+  lowest = occasions_to_course_counts.values.min
   candidates = []
-  occations_to_course_counts.each do |occation, count|
-    candidates << occation if count == lowest
+  occasions_to_course_counts.each do |occasion, count|
+    candidates << occasion if count == lowest
   end
 
-  # Pick one occation with the lowest count
+  # Pick one occasion with the lowest count
   return candidates.sample
 end
 
 def plan_food(food_thing, calendar_thing)
   plan = {}
-  remaining_occations = calendar_thing.clone
+  remaining_occasions = calendar_thing.clone
 
-  until remaining_occations.empty?
-    # Find the occation that with the lowest number of available courses
-    occation = find_occation_to_plan_for(food_thing, remaining_occations)
-    occation_name = occation.keys[0]
+  until remaining_occasions.empty?
+    # Find the occasion that with the lowest number of available courses
+    occasion = find_occasion_to_plan_for(food_thing, remaining_occasions)
+    occasion_name = occasion.keys[0]
 
-    course = plan_food_for_occation(food_thing, occation)
-    plan[occation_name] = course
+    course = plan_food_for_occasion(food_thing, occasion)
+    plan[occasion_name] = course
     food_thing.delete(course)
-    remaining_occations.delete(occation)
+    remaining_occasions.delete(occasion)
   end
 
   # Sort the plan to match the order of the calendar_thing
   ordered_plan = []
-  calendar_thing.each do |occation|
-    occation_name = occation.keys[0]
-    ordered_plan << { occation_name => plan[occation_name] }
+  calendar_thing.each do |occasion|
+    occasion_name = occasion.keys[0]
+    ordered_plan << { occasion_name => plan[occasion_name] }
   end
 
   return ordered_plan

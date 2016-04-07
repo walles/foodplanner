@@ -1,4 +1,4 @@
-# List of occations, with participants listed for each occation. The
+# List of occasions, with participants listed for each occasion. The
 # first participant of any day is assumed to do the cooking, so order
 # matters.
 
@@ -15,3 +15,8 @@
 
 - thursday:
     - johan
+
+- friday:
+    - fia
+    - johan
+    - only with tag: friday food
