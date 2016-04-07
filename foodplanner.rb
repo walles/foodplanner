@@ -19,7 +19,11 @@ def available_food_for_occasion(food_thing, occasion)
     # FIXME: If we get unknown restrictions, report error to user
     not_eating = restrictions['not eating'] || []
     not_cooking = restrictions['not cooking'] || []
+    occasions = restrictions['occasions'] || []
 
+    unless occasions.empty?
+      next unless occasions.include?(occasion_name)
+    end
     next if not_cooking.include?(cook)
     next if (participants & not_eating).size > 0
 
