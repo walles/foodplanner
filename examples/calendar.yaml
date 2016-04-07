@@ -2,6 +2,10 @@
 # first participant of any day is assumed to do the cooking, so order
 # matters.
 
+- constraints:
+  - sausage <= 1
+  - vego >= 1
+
 - monday:
     - fia
 
