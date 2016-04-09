@@ -6,6 +6,8 @@ pancakes:
 olives:
   not eating:
     - johan
+  tags:
+    - vego
 
 risotto:
   not cooking:
@@ -14,8 +16,12 @@ risotto:
 pasta bolognese:
 
 yorkshire pudding:
+  tags:
+    - vego
 
 hot dogs:
+  tags:
+    - sausage
 
 tacos:
   occasions:

@@ -1,6 +1,17 @@
 # List of occasions, with participants listed for each occasion. The
 # first participant of any day is assumed to do the cooking, so order
 # matters.
+#
+# A special occation "constraints" can be added as well, looking like this:
+#
+# - constraints:
+#   - sausage <= 1
+#
+# This will ensure getting sausage at most once per generated menu and vego at
+# least once.
+
+- constraints:
+  - sausage <= 1
 
 - monday:
     - fia

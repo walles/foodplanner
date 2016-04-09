@@ -24,8 +24,11 @@ def available_food_for_occasion(food_thing, occasion)
     unless occasions.empty?
       next unless occasions.include?(occasion_name)
     end
+
     next if not_cooking.include?(cook)
-    next if (participants & not_eating).size > 0
+
+    non_eating_participants_count = (participants & not_eating).size
+    next if non_eating_participants_count > 0
 
     available_food << course
   end
@@ -68,22 +71,19 @@ def find_occasion_to_plan_for(food_thing, occasions)
   return candidates.sample
 end
 
-def plan_food(food_thing, calendar_thing)
-  plan = {}
-  remaining_occasions = calendar_thing.clone
+def update_tag_counts(tag_counts, course)
+  return unless course
 
-  until remaining_occasions.empty?
-    # Find the occasion that with the lowest number of available courses
-    occasion = find_occasion_to_plan_for(food_thing, remaining_occasions)
-    occasion_name = occasion.keys[0]
+  tags = course['tags']
+  return unless tags
 
-    course = plan_food_for_occasion(food_thing, occasion)
-    plan[occasion_name] = course
-    food_thing.delete(course)
-    remaining_occasions.delete(occasion)
+  tags.each do |tag|
+    tag_counts[tag] += 1
   end
+end
 
-  # Sort the plan to match the order of the calendar_thing
+# Sort the plan to match the order of the calendar_thing
+def order_plan(plan, calendar_thing)
   ordered_plan = []
   calendar_thing.each do |occasion|
     occasion_name = occasion.keys[0]
@@ -91,6 +91,90 @@ def plan_food(food_thing, calendar_thing)
   end
 
   return ordered_plan
+end
+
+def restrictions_contain_tag?(restrictions, tag)
+  tags = restrictions['tags'] || []
+  return tags.include?(tag)
+end
+
+# Look for at-limit <= constraints and remove all other food with the
+# constraint's tag
+def eval_constraints(constraints, tag_counts, food_thing)
+  constraints.each do |constraint|
+    raise "Unsupported operation '#{constraint.op}'" unless constraint.op == '<='
+
+    tag_counts.each_pair do |tag, count|
+      next unless constraint.tag == tag
+      next if count < constraint.number
+
+      # We've reached the maximum number of [tag] courses, drop any remaining
+      # ones from the menu
+      food_thing.delete_if do |_course, restrictions|
+        restrictions && restrictions_contain_tag?(restrictions, tag)
+      end
+    end
+  end
+end
+
+def extract_constraints(calendar_thing)
+  # This method will modify calendar_thing!! If constraints are found, that
+  # array entry will be removed.
+  #
+  # Constraints are returned in an array. Each constraint has methods for:
+  # * .tag: What tag the constraint operates on
+  # * .op: The operation, can be '<=' for example
+  # * .number: The limit, can be 1 for example
+  constraints_index = calendar_thing.index { |entry| entry.keys[0] == 'constraints' }
+  return [] if constraints_index.nil?
+
+  constraints_yaml = calendar_thing[constraints_index].values[0]
+  calendar_thing.delete_at(constraints_index)
+
+  constraints = []
+  constraints_yaml.each do |constraint_string|
+    split = constraint_string.split
+    if split.size < 3
+      raise "Constraint should be on the form: '<tag name> <op> <number>': <#{constraint_string}>"
+    end
+
+    # FIXME: Print the full constraint if the number conversion fails
+    number = split[-1].to_i
+    op = split[-2]
+    tag = split[0..-3].join(' ')
+
+    constraints << Struct.new(:tag, :op, :number).new(tag, op, number)
+  end
+
+  return constraints
+end
+
+def plan_food(food_thing, calendar_thing)
+  plan = {}
+  tag_counts = Hash.new(0)
+
+  constraints = extract_constraints(calendar_thing)
+
+  remaining_occasions = calendar_thing.clone
+
+  until remaining_occasions.empty?
+    # Find the occasion that has the lowest number of available courses
+    occasion = find_occasion_to_plan_for(food_thing, remaining_occasions)
+    occasion_name = occasion.keys[0]
+
+    course = plan_food_for_occasion(food_thing, occasion)
+    plan[occasion_name] = course
+    update_tag_counts(tag_counts, food_thing[course])
+    eval_constraints(constraints, tag_counts, food_thing)
+    food_thing.delete(course)
+    remaining_occasions.delete(occasion)
+  end
+
+  tag_counts.each_pair do |tag, value|
+    puts "#{tag}: #{value}"
+  end
+
+  return order_plan(plan, calendar_thing)
 end
 
 # FIXME: Optionally accept a third argument which is the output from a
