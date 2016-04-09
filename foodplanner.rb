@@ -93,9 +93,68 @@ def order_plan(plan, calendar_thing)
   return ordered_plan
 end
 
+def restrictions_contain_tag?(restrictions, tag)
+  tags = restrictions['tags'] || []
+  return tags.include?(tag)
+end
+
+# Look for at-limit <= constraints and remove all other food with the
+# constraint's tag
+def eval_constraints(constraints, tag_counts, food_thing)
+  constraints.each do |constraint|
+    raise "Unsupported operation '#{constraint.op}'" unless constraint.op == '<='
+
+    tag_counts.each_pair do |tag, count|
+      next unless constraint.tag == tag
+      next if count < constraint.number
+
+      # We've reached the maximum number of [tag] courses, drop any remaining
+      # ones from the menu
+      food_thing.delete_if do |_course, restrictions|
+        restrictions && restrictions_contain_tag?(restrictions, tag)
+      end
+    end
+  end
+end
+
+def extract_constraints(calendar_thing)
+  # This method will modify calendar_thing!! If constraints are found, that
+  # array entry will be removed.
+  #
+  # Constraints are returned in an array. Each constraint has methods for:
+  # * .tag: What tag the constraint operates on
+  # * .op: The operation, can be '<=' for example
+  # * .number: The limit, can be 1 for example
+  constraints_index = calendar_thing.index { |entry| entry.keys[0] == 'constraints' }
+  return [] if constraints_index.nil?
+
+  constraints_yaml = calendar_thing[constraints_index].values[0]
+  calendar_thing.delete_at(constraints_index)
+
+  constraints = []
+  constraints_yaml.each do |constraint_string|
+    split = constraint_string.split
+    if split.size < 3
+      raise "Constraint should be on the form: '<tag name> <op> <number>': <#{constraint_string}>"
+    end
+
+    # FIXME: Print the full constraint if the number conversion fails
+    number = split[-1].to_i
+    op = split[-2]
+    tag = split[0..-3].join(' ')
+
+    constraints << Struct.new(:tag, :op, :number).new(tag, op, number)
+  end
+
+  return constraints
+end
+
 def plan_food(food_thing, calendar_thing)
   plan = {}
   tag_counts = Hash.new(0)
+
+  constraints = extract_constraints(calendar_thing)
+
   remaining_occasions = calendar_thing.clone
 
   until remaining_occasions.empty?
@@ -106,6 +165,7 @@ def plan_food(food_thing, calendar_thing)
     course = plan_food_for_occasion(food_thing, occasion)
     plan[occasion_name] = course
     update_tag_counts(tag_counts, food_thing[course])
+    eval_constraints(constraints, tag_counts, food_thing)
     food_thing.delete(course)
     remaining_occasions.delete(occasion)
   end
