@@ -7,8 +7,6 @@ Example:
 once per generated menu". Needs tagging of food courses, and some way
 of putting constraints on different tags.
 
-* Fail with an error message on malformed constraints.
-
 * Fail with an error message on unsupported constraint operation.
 
 * Warn about tags not mentioned in any constraints.
@@ -43,3 +41,5 @@ choices and continue up from there.
 * Add support for expressing things like "we want sausage at most once
 per generated menu". Needs tagging of food courses, and some way of
 putting constraints on different tags.
+
+* Fail with an error message on malformed constraints.

@@ -117,36 +117,42 @@ def eval_constraints(constraints, tag_counts, food_thing)
   end
 end
 
+def parse_constraint_string(constraint_string)
+  # A constraint string should be on the form: "sausage <= 1".
+  #
+  # Each parsed constraint has methods for:
+  # * .tag: What tag the constraint operates on
+  # * .op: The operation, can be '<=' for example
+  # * .number: The limit, can be 1 for example
+  split = constraint_string.split
+  if split.size < 3
+    raise "Constraint should be on the form: '<tag name> <op> <number>': <#{constraint_string}>"
+  end
+
+  number_s = split[-1]
+  number = number_s.to_i
+  if number.to_s != number_s
+    raise "Last word should be numeric in constraint: <#{constraint_string}>"
+  end
+
+  op = split[-2]
+  tag = split[0..-3].join(' ')
+
+  return Struct.new(:tag, :op, :number).new(tag, op, number)
+end
+
 def extract_constraints(calendar_thing)
   # This method will modify calendar_thing!! If constraints are found, that
   # array entry will be removed.
   #
-  # Constraints are returned in an array. Each constraint has methods for:
-  # * .tag: What tag the constraint operates on
-  # * .op: The operation, can be '<=' for example
-  # * .number: The limit, can be 1 for example
+  # Constraints are returned in an array.
   constraints_index = calendar_thing.index { |entry| entry.keys[0] == 'constraints' }
   return [] if constraints_index.nil?
 
   constraints_yaml = calendar_thing[constraints_index].values[0]
   calendar_thing.delete_at(constraints_index)
 
-  constraints = []
-  constraints_yaml.each do |constraint_string|
-    split = constraint_string.split
-    if split.size < 3
-      raise "Constraint should be on the form: '<tag name> <op> <number>': <#{constraint_string}>"
-    end
-
-    # FIXME: Print the full constraint if the number conversion fails
-    number = split[-1].to_i
-    op = split[-2]
-    tag = split[0..-3].join(' ')
-
-    constraints << Struct.new(:tag, :op, :number).new(tag, op, number)
-  end
-
-  return constraints
+  return constraints_yaml.map { |s| parse_constraint_string(s) }
 end
 
 def plan_food(food_thing, calendar_thing)
