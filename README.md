@@ -7,8 +7,6 @@ Example:
 once per generated menu". Needs tagging of food courses, and some way
 of putting constraints on different tags.
 
-* Fail with an error message on unsupported constraint operation.
-
 * Warn about tags not mentioned in any constraints.
 
 * Warn about at-least constraints where there aren't enough courses with the
@@ -43,3 +41,5 @@ per generated menu". Needs tagging of food courses, and some way of
 putting constraints on different tags.
 
 * Fail with an error message on malformed constraints.
+
+* Fail with an error message on unsupported constraint operation.

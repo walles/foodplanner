@@ -12,10 +12,24 @@ class Constraints
     constraints_index = calendar_thing.index { |entry| entry.keys[0] == 'constraints' }
     return if constraints_index.nil?
 
-    constraints_yaml = calendar_thing[constraints_index].values[0]
+    _parse_constraint_strings(calendar_thing[constraints_index].values[0])
     calendar_thing.delete_at(constraints_index)
+  end
 
-    @constraints = constraints_yaml.map { |s| _parse_constraint_string(s) }
+  def _parse_constraint_strings(constraint_strings)
+    @at_most = []
+    @at_least = []
+    constraint_strings.each do |cs|
+      constraint = _parse_constraint_string(cs)
+      case constraint.op
+      when '<='
+        @at_least << constraint
+      when '>='
+        @at_most << constraint
+      else
+        raise "Unknown operation '#{constraint.op}', must be '>=' or '<=': <#{cs}>"
+      end
+    end
   end
 
   def _parse_constraint_string(constraint_string)
@@ -45,9 +59,7 @@ class Constraints
   # Look for at-limit <= constraints and remove all other food with the
   # constraint's tag
   def enforce_at_most(tag_counts, food_thing)
-    @constraints.each do |constraint|
-      raise "Unsupported operation '#{constraint.op}'" unless constraint.op == '<='
-
+    @at_most.each do |constraint|
       tag_counts.each_pair do |tag, count|
         next unless constraint.tag == tag
         next if count < constraint.number
