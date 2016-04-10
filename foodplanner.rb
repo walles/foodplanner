@@ -2,6 +2,108 @@
 
 require 'yaml'
 
+# Keeps track of and evaluates constraints on the generated menu
+class Constraints
+  def initialize(calendar_thing)
+    # This method will modify calendar_thing!! If constraints are found, that
+    # array entry will be removed.
+    #
+    # Constraints are returned in an array.
+    constraints_index = calendar_thing.index { |entry| entry.keys[0] == 'constraints' }
+    return if constraints_index.nil?
+
+    _parse_constraint_strings(calendar_thing[constraints_index].values[0])
+    calendar_thing.delete_at(constraints_index)
+  end
+
+  def _parse_constraint_strings(constraint_strings)
+    @at_most = []
+    @at_least = []
+    constraint_strings.each do |cs|
+      constraint = _parse_constraint_string(cs)
+      case constraint.op
+      when '>='
+        @at_least << constraint
+      when '<='
+        @at_most << constraint
+      else
+        raise "Unknown operation '#{constraint.op}', must be '>=' or '<=': <#{cs}>"
+      end
+    end
+  end
+
+  def _parse_constraint_string(constraint_string)
+    # A constraint string should be on the form: "sausage <= 1".
+    #
+    # Each parsed constraint has methods for:
+    # * .tag: What tag the constraint operates on
+    # * .op: The operation, can be '<=' for example
+    # * .number: The limit, can be 1 for example
+    split = constraint_string.split
+    if split.size < 3
+      raise "Constraint should be on the form: '<tag name> <op> <number>': <#{constraint_string}>"
+    end
+
+    number_s = split[-1]
+    number = number_s.to_i
+    if number.to_s != number_s
+      raise "Last word should be numeric in constraint: <#{constraint_string}>"
+    end
+
+    op = split[-2]
+    tag = split[0..-3].join(' ')
+
+    return Struct.new(:tag, :op, :number).new(tag, op, number)
+  end
+
+  # Look for at-limit <= constraints and remove all other food with the
+  # constraint's tag
+  def enforce_at_most(tag_counts, food_thing)
+    @at_most.each do |constraint|
+      tag_counts.each_pair do |tag, count|
+        next unless constraint.tag == tag
+        next if count < constraint.number
+
+        # We've reached the maximum number of [tag] courses, drop any remaining
+        # ones from the menu
+        food_thing.delete_if do |_course, restrictions|
+          restrictions && restrictions_contain_tag?(restrictions, tag)
+        end
+      end
+    end
+  end
+
+  def get_unfulfilled_tags(tag_counts)
+    unfulfilled = []
+    @at_least.each do |at_least|
+      if tag_counts[at_least.tag] < at_least.number
+        unfulfilled << at_least.tag
+      end
+    end
+    return unfulfilled
+  end
+
+  # If we have any unfulfilled at-least constraints, return only food with the
+  # tags we need more of. Otherwise just return all food.
+  def filter_available_food(food_thing, tag_counts)
+    unfulfilled_tags = get_unfulfilled_tags(tag_counts)
+    return food_thing if unfulfilled_tags.empty?
+
+    filtered = {}
+    food_thing.each_pair do |name, restrictions|
+      next if restrictions.nil?
+
+      tags = restrictions['tags']
+      next if tags.nil?
+
+      helps_constraint = !(tags & unfulfilled_tags).empty?
+      filtered[name] = restrictions if helps_constraint
+    end
+
+    return filtered
+  end
+end
+
 def available_food_for_occasion(food_thing, occasion)
   occasion_name = occasion.keys[0]
   participants = occasion[occasion_name]
@@ -40,6 +142,7 @@ def plan_food_for_occasion(food_thing, occasion)
   available_food = available_food_for_occasion(food_thing, occasion)
 
   if available_food.empty?
+    # FIXME: List unfulfilled constraints if we have any
     occasion_name = occasion.keys[0]
     $stderr.puts "ERROR: Can't plan for #{occasion_name}, menu exhausted"
     $stderr.puts
@@ -98,80 +201,29 @@ def restrictions_contain_tag?(restrictions, tag)
   return tags.include?(tag)
 end
 
-# Look for at-limit <= constraints and remove all other food with the
-# constraint's tag
-def eval_constraints(constraints, tag_counts, food_thing)
-  constraints.each do |constraint|
-    raise "Unsupported operation '#{constraint.op}'" unless constraint.op == '<='
-
-    tag_counts.each_pair do |tag, count|
-      next unless constraint.tag == tag
-      next if count < constraint.number
-
-      # We've reached the maximum number of [tag] courses, drop any remaining
-      # ones from the menu
-      food_thing.delete_if do |_course, restrictions|
-        restrictions && restrictions_contain_tag?(restrictions, tag)
-      end
-    end
-  end
-end
-
-def parse_constraint_string(constraint_string)
-  # A constraint string should be on the form: "sausage <= 1".
-  #
-  # Each parsed constraint has methods for:
-  # * .tag: What tag the constraint operates on
-  # * .op: The operation, can be '<=' for example
-  # * .number: The limit, can be 1 for example
-  split = constraint_string.split
-  if split.size < 3
-    raise "Constraint should be on the form: '<tag name> <op> <number>': <#{constraint_string}>"
-  end
-
-  number_s = split[-1]
-  number = number_s.to_i
-  if number.to_s != number_s
-    raise "Last word should be numeric in constraint: <#{constraint_string}>"
-  end
-
-  op = split[-2]
-  tag = split[0..-3].join(' ')
-
-  return Struct.new(:tag, :op, :number).new(tag, op, number)
-end
-
-def extract_constraints(calendar_thing)
-  # This method will modify calendar_thing!! If constraints are found, that
-  # array entry will be removed.
-  #
-  # Constraints are returned in an array.
-  constraints_index = calendar_thing.index { |entry| entry.keys[0] == 'constraints' }
-  return [] if constraints_index.nil?
-
-  constraints_yaml = calendar_thing[constraints_index].values[0]
-  calendar_thing.delete_at(constraints_index)
-
-  return constraints_yaml.map { |s| parse_constraint_string(s) }
-end
-
 def plan_food(food_thing, calendar_thing)
   plan = {}
   tag_counts = Hash.new(0)
 
-  constraints = extract_constraints(calendar_thing)
+  constraints = Constraints.new(calendar_thing)
 
   remaining_occasions = calendar_thing.clone
 
   until remaining_occasions.empty?
+    # Start out with planning only food where we haven't yet reached the
+    # at-least limit
+    available_food = constraints.filter_available_food(food_thing, tag_counts)
+
     # Find the occasion that has the lowest number of available courses
-    occasion = find_occasion_to_plan_for(food_thing, remaining_occasions)
+    occasion = find_occasion_to_plan_for(available_food, remaining_occasions)
     occasion_name = occasion.keys[0]
 
-    course = plan_food_for_occasion(food_thing, occasion)
+    course = plan_food_for_occasion(available_food, occasion)
     plan[occasion_name] = course
+
+    # Update the global food status, not just the available_food one
     update_tag_counts(tag_counts, food_thing[course])
-    eval_constraints(constraints, tag_counts, food_thing)
+    constraints.enforce_at_most(tag_counts, food_thing)
     food_thing.delete(course)
     remaining_occasions.delete(occasion)
   end

@@ -6,12 +6,14 @@
 #
 # - constraints:
 #   - sausage <= 1
+#   - vego >= 1
 #
 # This will ensure getting sausage at most once per generated menu and vego at
 # least once.
 
 - constraints:
   - sausage <= 1
+  - vego >= 1
 
 - monday:
     - fia
