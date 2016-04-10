@@ -22,9 +22,9 @@ class Constraints
     constraint_strings.each do |cs|
       constraint = _parse_constraint_string(cs)
       case constraint.op
-      when '<='
-        @at_least << constraint
       when '>='
+        @at_least << constraint
+      when '<='
         @at_most << constraint
       else
         raise "Unknown operation '#{constraint.op}', must be '>=' or '<=': <#{cs}>"
@@ -72,6 +72,36 @@ class Constraints
       end
     end
   end
+
+  def get_unfulfilled_tags(tag_counts)
+    unfulfilled = []
+    @at_least.each do |at_least|
+      if tag_counts[at_least.tag] < at_least.number
+        unfulfilled << at_least.tag
+      end
+    end
+    return unfulfilled
+  end
+
+  # If we have any unfulfilled at-least constraints, return only food with the
+  # tags we need more of. Otherwise just return all food.
+  def filter_available_food(food_thing, tag_counts)
+    unfulfilled_tags = get_unfulfilled_tags(tag_counts)
+    return food_thing if unfulfilled_tags.empty?
+
+    filtered = {}
+    food_thing.each_pair do |name, restrictions|
+      next if restrictions.nil?
+
+      tags = restrictions['tags']
+      next if tags.nil?
+
+      helps_constraint = !(tags & unfulfilled_tags).empty?
+      filtered[name] = restrictions if helps_constraint
+    end
+
+    return filtered
+  end
 end
 
 def available_food_for_occasion(food_thing, occasion)
@@ -112,6 +142,7 @@ def plan_food_for_occasion(food_thing, occasion)
   available_food = available_food_for_occasion(food_thing, occasion)
 
   if available_food.empty?
+    # FIXME: List unfulfilled constraints if we have any
     occasion_name = occasion.keys[0]
     $stderr.puts "ERROR: Can't plan for #{occasion_name}, menu exhausted"
     $stderr.puts
@@ -179,12 +210,18 @@ def plan_food(food_thing, calendar_thing)
   remaining_occasions = calendar_thing.clone
 
   until remaining_occasions.empty?
+    # Start out with planning only food where we haven't yet reached the
+    # at-least limit
+    available_food = constraints.filter_available_food(food_thing, tag_counts)
+
     # Find the occasion that has the lowest number of available courses
-    occasion = find_occasion_to_plan_for(food_thing, remaining_occasions)
+    occasion = find_occasion_to_plan_for(available_food, remaining_occasions)
     occasion_name = occasion.keys[0]
 
-    course = plan_food_for_occasion(food_thing, occasion)
+    course = plan_food_for_occasion(available_food, occasion)
     plan[occasion_name] = course
+
+    # Update the global food status, not just the available_food one
     update_tag_counts(tag_counts, food_thing[course])
     constraints.enforce_at_most(tag_counts, food_thing)
     food_thing.delete(course)
