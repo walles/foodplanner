@@ -1,6 +1,7 @@
-Example:
-    ./foodplanner.rb examples/menu.yaml examples/calendar.yaml
-
+# Example
+```
+./foodplanner.rb examples/menu.yaml examples/calendar.yaml
+```
 # TODO
 
 * Warn about tags not mentioned in any constraints.
