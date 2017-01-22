@@ -9,6 +9,10 @@ class Constraints
     # array entry will be removed.
     #
     # Constraints are returned in an array.
+
+    @at_most = []
+    @at_least = []
+
     constraints_index = calendar_thing.index { |entry| entry.keys[0] == 'constraints' }
     return if constraints_index.nil?
 
@@ -17,8 +21,6 @@ class Constraints
   end
 
   def _parse_constraint_strings(constraint_strings)
-    @at_most = []
-    @at_least = []
     constraint_strings.each do |cs|
       constraint = _parse_constraint_string(cs)
       case constraint.op
